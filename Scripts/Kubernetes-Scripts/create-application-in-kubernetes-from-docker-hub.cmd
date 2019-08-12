@@ -1,0 +1,1 @@
+kubectl create --filename todolist-deployments-and-services-from-docker-hub.yml --record

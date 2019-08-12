@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  todoapi:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RepositoryService__CosmosDb__EndpointUri=COSMOS_DB_ENDPOINT_URI
+      - RepositoryService__CosmosDb__PrimaryKey=DOCUMENT_DB_PRIMARY_KEY
+      - RepositoryService__CosmosDb__DatabaseName=TodoApiDb
+      - RepositoryService__CosmosDb__CollectionName=TodoApiCollection
+      - NotificationService__ServiceBus__ConnectionString=SERVICE_BUS_CONNECTIONSTRING
+      - NotificationService__ServiceBus__QueueName=todoapi
+      - DataProtection__BlobStorage__ConnectionString=STORAGE_ACCOUNT_CONNECTION_STRING
+      - DataProtection__BlobStorage__ContainerName=todoapi
+      - ApplicationInsights__InstrumentationKey=APPLICATION_INSIGHTS_INSTRUMENTATION_KEY
+
+    ports:
+      - "80"
+
+  todoweb:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - TodoApiService__EndpointUri=todoapi
+      - DataProtection__BlobStorage__ConnectionString=STORAGE_ACCOUNT_CONNECTION_STRING
+      - DataProtection__BlobStorage__ContainerName=todoweb
+      - ApplicationInsights__InstrumentationKey=APPLICATION_INSIGHTS_INSTRUMENTATION_KEY
+    ports:
+      - "80"

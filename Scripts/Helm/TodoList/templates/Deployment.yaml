@@ -1,0 +1,154 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{.Values.backend}}
+  labels:
+    app: {{.Values.backend}}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{.Values.backend}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: {{.Values.backend}}
+    spec:
+      containers:
+      - name: {{.Values.backend}}
+        image: {{.Values.imageRegistry}}/{{.Values.backendImage}}:{{.Values.backendTag}}
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: todolist-configmap
+              key: aspNetCoreEnvironment
+        - name: RepositoryService__CosmosDb__EndpointUri
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: cosmosDbEndpointUri
+        - name: RepositoryService__CosmosDb__PrimaryKey
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: cosmosDBPrimaryKey
+        - name: RepositoryService__CosmosDb__DatabaseName
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: cosmosDbDatabaseName
+        - name: RepositoryService__CosmosDb__CollectionName
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: cosmosDbCollectionName
+        - name: NotificationService__ServiceBus__ConnectionString
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: serviceBusConnectionString
+        - name: NotificationService__ServiceBus__QueueName
+          valueFrom:
+            configMapKeyRef:
+              name: todolist-configmap
+              key: todoApiServiceBusQueueName
+        - name: DataProtection__BlobStorage__ConnectionString
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: dataProtectionBlobStorageConnectionString
+        - name: DataProtection__BlobStorage__ContainerName
+          valueFrom:
+            configMapKeyRef:
+              name: todolist-configmap
+              key: todoApiDataProtectionBlobStorageContainerName
+        - name: ApplicationInsights__InstrumentationKey
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: applicationInsightsInstrumentationKey
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.backend}}
+spec:
+  type: {{.Values.backendServiceType}}
+  ports:
+  - protocol: TCP
+    port: 80
+  selector:
+    app: {{.Values.backend}}
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{.Values.frontend}}
+  labels:
+    app: {{.Values.frontend}}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{.Values.frontend}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      labels:
+        app: {{.Values.frontend}}
+    spec:
+      containers:
+      - name: {{.Values.frontend}}
+        image: {{.Values.imageRegistry}}/{{.Values.frontendImage}}:{{.Values.frontendTag}}
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: todolist-configmap
+              key: aspNetCoreEnvironment
+        - name: TodoApiService__EndpointUri
+          valueFrom:
+            configMapKeyRef:
+              name: todolist-configmap
+              key: todoApiServiceEndpointUri
+        - name: DataProtection__BlobStorage__ConnectionString
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: dataProtectionBlobStorageConnectionString
+        - name: DataProtection__BlobStorage__ContainerName
+          valueFrom:
+            configMapKeyRef:
+              name: todolist-configmap
+              key: todoWebDataProtectionBlobStorageContainerName
+        - name: ApplicationInsights__InstrumentationKey
+          valueFrom:
+            secretKeyRef:
+                name: todolist-secret
+                key: applicationInsightsInstrumentationKey
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.frontend}}
+spec:
+  type: {{.Values.frontendServiceType}}
+  ports:
+  - protocol: TCP
+    port: 80
+  selector:
+    app: {{.Values.frontend}}
